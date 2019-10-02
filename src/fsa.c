@@ -1,3 +1,12 @@
+/** FSA. @file
+ *
+ * Detailed information can be found in README.md
+ * Examples can be found in the catalog TEST
+ *
+ * @version 1.0
+ * @author created by Nikita Litvinov, 2019
+ *
+ */
 #include <sys/sendfile.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,6 +21,14 @@
 #include <stdio.h>
 
 #include <fsa/fsa.h>
+
+/** Copy file.
+ *
+ * @param[in]   input_file Name source file.
+ * @param[in]   output_file Name file for copy, If file isn't exist, it will be created.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 
 int fsa_file_copy(
         const char *input_file,
@@ -71,6 +88,15 @@ int fsa_file_copy(
     return ret;
 }
 
+/** Move file.
+ *
+ * @warning Use it only for one FS.
+ *
+ * @param[in]   input_file Name source file.
+ * @param[in]   output_file Name file for move.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 int fsa_file_rename(
         const char *input_file,
         const char *output_file)
@@ -95,6 +121,13 @@ int fsa_file_rename(
     return ret;
 }
 
+/** Check file exist.
+ *
+ * @param[in]   file_name Name file.
+ * @param[out]   exist If file exist this val = 1, otherwise = 0.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 int fsa_file_exist(
         const char *file_name,
         int        *exist)
@@ -128,6 +161,12 @@ int fsa_file_exist(
     return ret;
 }
 
+/** Create file.
+ *
+ * @param[in]   file_name Name file for create.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 int fsa_file_touch(
         const char *file_name)
 {
@@ -153,6 +192,12 @@ int fsa_file_touch(
     return ret;
 }
 
+/** Delete file.
+ *
+ * @param[in]   file_name Name file for delete.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 int fsa_file_remove(
         const char *file_name)
 {
@@ -176,7 +221,13 @@ int fsa_file_remove(
     return ret;
 }
 
-
+/** Check directory exist.
+ *
+ * @param[in]   dir_name Name directory.
+ * @param[out]   exist If dir exist this val = 1, otherwise = 0.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 int fsa_dir_exist(
         const char *dir_name,
         int        *exist)
@@ -212,6 +263,12 @@ int fsa_dir_exist(
     return ret;
 }
 
+/** Create directory, is support for recursive creation.
+ *
+ * @param[in]   dir_name Name directory.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 int fsa_dir_create(
         const char *dir_name)
 {
@@ -276,6 +333,12 @@ int fsa_dir_create(
     return ret;
 }
 
+/** Delete directory with content.
+ *
+ * @param[in]   dir_name Name directory.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 int fsa_dir_remove(
         const char *dir_name)
 {
@@ -392,6 +455,12 @@ static int system_vfork(
     return ret;
 }
 
+/** A function for safely and correctly running shell commands.
+ *
+ * @param[in]   cmd Command, supports command input as a format string.
+ *
+ * @return      On error, ERROR_CODES is returned, otherwise 0.
+ */
 int fsa_run_command(
         const char *cmd,
         ...)
