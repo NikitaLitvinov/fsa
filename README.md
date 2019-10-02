@@ -23,7 +23,11 @@
 
     make test
 
+Для сборки Doxygen
+
+    make doc
+
 #### TODO:
 *  ~~Тесты~~
 * fsa_file_rename для разных систем
-* Doxygen
+* ~~Doxygen~~
