@@ -3,6 +3,5 @@ language: c
 
 script:
   - mkdir -p cmake-build
-  - cd cmake-build
-  - cmake ..
-  - make test
+  - cd cmake-build && cmake ..
+  - cd cmake-build && make test
