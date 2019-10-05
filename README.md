@@ -1,4 +1,5 @@
 # FSA 
+[![Build Status](https://travis-ci.org/NikitaLitvinov/fsa.svg?branch=master)](https://travis-ci.org/NikitaLitvinov/fsa)
 
 **FSA (File Systems Api)** - Маленькая блиотека для работы с файловой системой (Linux) и для безопастного исполнения shell в Си. 
 

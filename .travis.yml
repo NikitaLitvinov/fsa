@@ -1,0 +1,8 @@
+sudo: false
+language: c
+
+script:
+  mkdir cmake-build
+  cd cmake-build
+  cmake ..
+  make test
