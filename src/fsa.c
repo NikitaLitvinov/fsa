@@ -22,6 +22,9 @@
 
 #include <fsa/fsa.h>
 
+#define LOG_ERR( fmt, ... ) printf("[%s:%d] Error! "fmt, __func__, __LINE__, ##__VA_ARGS__ )
+#define LOG_INFO( fmt, ... ) printf(fmt, ##__VA_ARGS__ )
+
 /** Copy file.
  *
  * @param[in]   input_file Name source file.
@@ -44,15 +47,14 @@ int fsa_file_copy(
     int ret = 0;
     errno = 0;
 
-    if (NULL == input_file || NULL == output_file)
+	if (NULL == input_file || NULL == output_file)
     {
-        ret = -1;
-        goto exit;
+	    ret = -1;
+	    goto exit;
     }
-
     if ((input_fd = open(input_file, O_RDONLY)) < 0)
     {
-        printf("Error! Can't open file \"%s\" (%s)\n", input_file, strerror(errno));
+        LOG_ERR("Can't open file \"%s\" (%s)\n", input_file, strerror(errno));
         ret = -2;
         goto exit;
     }
@@ -63,7 +65,7 @@ int fsa_file_copy(
 
     if ((output_fd = open(output_file, (O_CREAT | O_WRONLY), 0777)) < 0)
     {
-        printf("Error! Can't open file \"%s\" (%s)\n", output_file, strerror(errno));
+	    LOG_ERR("Can't open file \"%s\" (%s)\n", output_file, strerror(errno));
 
         ret = -3;
         goto exit;
@@ -76,7 +78,7 @@ int fsa_file_copy(
 
     if ((rv = sendfile(output_fd, input_fd, &off, len)) < 0)
     {
-        printf("Error! %s\n", strerror(errno));
+	    LOG_ERR("Can't copy (sendfile) files (%s)\n", strerror(errno));
         ret = -4;
         goto exit;
     }
@@ -113,7 +115,7 @@ int fsa_file_rename(
     ret = rename(input_file, output_file);
     if (ret < 0)
     {
-        printf("Error! %s\n", strerror(errno));
+        LOG_ERR("Can't rename file (%s)\n", strerror(errno));
         goto exit;
     }
 
@@ -151,7 +153,7 @@ int fsa_file_exist(
 
     if (errno != ENOENT)
     {
-        printf("Error! Can't check file (%s)\n", strerror(errno));
+        LOG_ERR("Can't check file (%s)\n", strerror(errno));
         ret = -1;
         goto exit;
     }
@@ -182,7 +184,7 @@ int fsa_file_touch(
 
     if ((fd = open(file_name, (O_CREAT | O_WRONLY), 0777)) < 0)
     {
-        printf("Error! Can't open file \"%s\" (%s)\n", file_name, strerror(errno));
+        LOG_ERR("Can't open file \"%s\" (%s)\n", file_name, strerror(errno));
         ret = -2;
         goto exit;
     }
@@ -213,7 +215,7 @@ int fsa_file_remove(
     ret = unlink(file_name);
     if (ret < 0)
     {
-        printf("Error! Can't unlink file \"%s\" (%s)\n", file_name, strerror(errno));
+        LOG_ERR("Can't unlink file \"%s\" (%s)\n", file_name, strerror(errno));
         goto exit;
     }
 
@@ -253,7 +255,7 @@ int fsa_dir_exist(
 
     if (ENOENT != errno)
     {
-        printf("Error! Can't open dir \"%s\" (%s)", dir_name, strerror(errno));
+        LOG_ERR("Can't open dir \"%s\" (%s)", dir_name, strerror(errno));
         ret = -2;
         goto exit;
     }
@@ -323,7 +325,7 @@ int fsa_dir_create(
 
         if (mkdir(tmp_cmd, S_IRWXU))
         {
-            printf("Error! %s\n", strerror(errno));
+            LOG_ERR("Can't create dir (%s)\n", strerror(errno));
             ret = -2;
             goto exit;
         }
@@ -361,7 +363,7 @@ int fsa_dir_remove(
     directory = opendir(dir_name);
     if (NULL == directory)
     {
-        printf("Error! Can't open dir (%s)\n", strerror(errno));
+        LOG_ERR("Can't open dir (%s)\n", strerror(errno));
         ret = -2;
         goto exit;
     }
@@ -377,7 +379,7 @@ int fsa_dir_remove(
         buf_len = path_len + strlen(p->d_name) + 2;
         if (buf_len >= PATH_MAX)
         {
-            printf("Error! Long directory name\n");
+	        LOG_ERR("Long directory name\n");
             ret = -3;
             goto exit;
         }
@@ -405,7 +407,7 @@ int fsa_dir_remove(
         ret = rmdir(dir_name);
         if (ret != 0)
         {
-            printf("Error! %s\n", strerror(errno));
+	        LOG_ERR("Can't remove dir (%s)\n", strerror(errno));
             goto exit;
         }
     }
@@ -413,7 +415,7 @@ int fsa_dir_remove(
     exit:
     if (NULL != directory && 0 != closedir(directory))
     {
-        printf("Error! Can't close dire (%s)\n", strerror(errno));
+	    LOG_ERR("Can't close dire (%s)\n", strerror(errno));
     }
     return ret;
 }
