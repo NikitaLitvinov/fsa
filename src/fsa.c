@@ -426,7 +426,7 @@ static int system_vfork(
     pid_t pid_wait = -1;
     int ret = 0;
     const char *sh = "/bin/sh";
-    char *const argv[] = { (char *const)sh, (char *const)"-c", (char *const)cmd, (char *const)NULL };
+    char * const argv[] = { sh, "-c", cmd, NULL };
 
     pid = vfork();
     if (pid < 0)
