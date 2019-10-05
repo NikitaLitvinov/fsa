@@ -2,7 +2,7 @@ sudo: false
 language: c
 
 script:
-  mkdir -p cmake-build
-  cd cmake-build
-  cmake ..
-  make test
+  - mkdir -p cmake-build
+  - cd cmake-build
+  - cmake ..
+  - make test
