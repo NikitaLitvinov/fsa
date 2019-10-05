@@ -19,7 +19,7 @@ void fsa_test_null_ptr(
 void fsa_test_null_ptr(
     void)
 {
-    int exist = 1;
+    bool exist = true;
     /* Проверка на NULL */
     ok((-1 == fsa_file_copy(NULL, "test")), "fsa_file_copy: Предаем 1ый параметр NULL, получаем -1");
     ok((-1 == fsa_file_copy("test", NULL)), "fsa_file_copy: Предаем 2ой параметр NULL, получаем -1");

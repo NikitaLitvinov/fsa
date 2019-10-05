@@ -7,23 +7,14 @@
  * @author created by Nikita Litvinov, 2019
  *
  */
-#include <sys/sendfile.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <string.h>
-#include <dirent.h>
-#include <stdarg.h>
-#include <libgen.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-
 #include <fsa/fsa.h>
 
-#define LOG_ERR( fmt, ... ) printf("[%s:%d] Error! "fmt, __func__, __LINE__, ##__VA_ARGS__ )
-#define LOG_INFO( fmt, ... ) printf(fmt, ##__VA_ARGS__ )
+#define LOG_ERR(fmt, ...) printf("[%s:%d] Error! "fmt, __func__, __LINE__, ##__VA_ARGS__ )
+#define LOG_INFO(fmt, ...) printf(fmt, ##__VA_ARGS__ )
+
+enum {
+    CMD_MAX_SIZE = 2048
+};
 
 /** Copy file.
  *
@@ -37,21 +28,23 @@ int fsa_file_copy(
         const char *input_file,
         const char *output_file)
 {
-    int input_fd = -1, output_fd = -1;
+    int input_fd = -1;
+    int output_fd = -1;
     off_t off = 0;
     size_t len = 0;
     ssize_t rv;
     char *dir = NULL;
     struct stat st;
-    char tmp_dir[PATH_MAX] = { 0 };
+    char tmp_dir[PATH_MAX] = {0};
     int ret = 0;
-    errno = 0;
 
-	if (NULL == input_file || NULL == output_file)
+    if (NULL == input_file || NULL == output_file)
     {
-	    ret = -1;
-	    goto exit;
+        ret = -1;
+        goto exit;
     }
+
+    errno = 0;
     if ((input_fd = open(input_file, O_RDONLY)) < 0)
     {
         LOG_ERR("Can't open file \"%s\" (%s)\n", input_file, strerror(errno));
@@ -63,29 +56,39 @@ int fsa_file_copy(
     dir = dirname(tmp_dir);
     fsa_dir_create(dir);
 
+    errno = 0;
     if ((output_fd = open(output_file, (O_CREAT | O_WRONLY), 0777)) < 0)
     {
-	    LOG_ERR("Can't open file \"%s\" (%s)\n", output_file, strerror(errno));
+        LOG_ERR("Can't open file \"%s\" (%s)\n", output_file, strerror(errno));
 
         ret = -3;
         goto exit;
     }
-
-    if (stat(input_file, &st) != 0)
+    ret = stat(input_file, &st);
+    if (ret != 0)
     {
-        len = (size_t)st.st_size;
+        LOG_ERR("Can't stat file \"%s\"", input_file);
+        ret = -4;
+        goto exit;
     }
+    len = (size_t) st.st_size;
 
     if ((rv = sendfile(output_fd, input_fd, &off, len)) < 0)
     {
-	    LOG_ERR("Can't copy (sendfile) files (%s)\n", strerror(errno));
-        ret = -4;
+        LOG_ERR("Can't copy (sendfile) files (%s)\n", strerror(errno));
+        ret = -5;
         goto exit;
     }
 
     exit:
-    close(input_fd);
-    close(output_fd);
+    if (input_fd != -1)
+    {
+        close(input_fd);
+    }
+    if (output_fd != -1)
+    {
+        close(output_fd);
+    }
 
     return ret;
 }
@@ -126,16 +129,15 @@ int fsa_file_rename(
 /** Check file exist.
  *
  * @param[in]   file_name Name file.
- * @param[out]   exist If file exist this val = 1, otherwise = 0.
+ * @param[out]   exist If file exist this val = true, otherwise = false.
  *
  * @return      On error, ERROR_CODES is returned, otherwise 0.
  */
 int fsa_file_exist(
         const char *file_name,
-        int        *exist)
+        bool *exist)
 {
     int ret = 0;
-    errno = 0;
 
     if (NULL == file_name || NULL == exist)
     {
@@ -143,18 +145,19 @@ int fsa_file_exist(
         goto exit;
     }
 
-    *exist = 0;
+    errno = 0;
+    *exist = false;
     ret = access(file_name, F_OK);
     if (ret == 0)
     {
-        *exist = 1;
+        *exist = true;
         goto exit;
     }
 
     if (errno != ENOENT)
     {
         LOG_ERR("Can't check file (%s)\n", strerror(errno));
-        ret = -1;
+        ret = -2;
         goto exit;
     }
     ret = 0;
@@ -174,7 +177,6 @@ int fsa_file_touch(
 {
     int fd = -1;
     int ret = 0;
-    errno = 0;
 
     if (NULL == file_name)
     {
@@ -182,6 +184,7 @@ int fsa_file_touch(
         goto exit;
     }
 
+    errno = 0;
     if ((fd = open(file_name, (O_CREAT | O_WRONLY), 0777)) < 0)
     {
         LOG_ERR("Can't open file \"%s\" (%s)\n", file_name, strerror(errno));
@@ -190,7 +193,10 @@ int fsa_file_touch(
     }
 
     exit:
-    close(fd);
+    if (fd != -1)
+    {
+        close(fd);
+    }
     return ret;
 }
 
@@ -204,7 +210,6 @@ int fsa_file_remove(
         const char *file_name)
 {
     int ret = 0;
-    errno = 0;
 
     if (NULL == file_name)
     {
@@ -212,6 +217,7 @@ int fsa_file_remove(
         goto exit;
     }
 
+    errno = 0;
     ret = unlink(file_name);
     if (ret < 0)
     {
@@ -226,17 +232,16 @@ int fsa_file_remove(
 /** Check directory exist.
  *
  * @param[in]   dir_name Name directory.
- * @param[out]   exist If dir exist this val = 1, otherwise = 0.
+ * @param[out]   exist If dir exist this val = true, otherwise = false.
  *
  * @return      On error, ERROR_CODES is returned, otherwise 0.
  */
 int fsa_dir_exist(
         const char *dir_name,
-        int        *exist)
+        bool *exist)
 {
     DIR *directory = NULL;
     int ret = 0;
-    errno = 0;
 
     if (NULL == dir_name || NULL == exist)
     {
@@ -244,12 +249,12 @@ int fsa_dir_exist(
         goto exit;
     }
 
-    *exist = 0;
+    errno = 0;
+    *exist = false;
     directory = opendir(dir_name);
     if (directory)
     {
-        *exist = 1;
-        closedir(directory);
+        *exist = true;
         goto exit;
     }
 
@@ -262,6 +267,10 @@ int fsa_dir_exist(
     ret = 0;
 
     exit:
+    if (*exist == true)
+    {
+        closedir(directory);
+    }
     return ret;
 }
 
@@ -276,12 +285,12 @@ int fsa_dir_create(
 {
     char *splitter = NULL;
     char *tmp_dir_iter = NULL;
-    char tmp_dir[PATH_MAX] = { 0 };
-    char mkdir_cmd[PATH_MAX] = { 0 };
-    char tmp_cmd[PATH_MAX] = { 0 };
+    char tmp_dir[PATH_MAX] = {0};
+    char mkdir_cmd[PATH_MAX] = {0};
+    char tmp_cmd[PATH_MAX] = {0};
     struct stat st;
     int done = 0;
-    int exist = 0;
+    bool exist = false;
     int ret = 0;
 
     if (NULL == dir_name)
@@ -291,7 +300,7 @@ int fsa_dir_create(
     }
 
     fsa_dir_exist(dir_name, &exist);
-    if (1 == exist)
+    if (false == exist)
     {
         goto exit;
     }
@@ -309,7 +318,7 @@ int fsa_dir_create(
         }
         if ((splitter = strchr(tmp_dir_iter, '/')) != NULL)
         {
-            strncpy(mkdir_cmd, dir_name, (size_t)(strlen(dir_name) - strlen(splitter)));
+            strncpy(mkdir_cmd, dir_name, (size_t) (strlen(dir_name) - strlen(splitter)));
             tmp_dir_iter = splitter + 1;
             if (stat(mkdir_cmd, &st) == 0)
             {
@@ -350,7 +359,7 @@ int fsa_dir_remove(
     size_t buf_len = 0;
     int ret = 0;
     int internal_ret = -1;
-    char buf[PATH_MAX] = { 0 };
+    char buf[PATH_MAX] = {0};
     struct stat stat_buf;
 
     if (NULL == dir_name)
@@ -379,7 +388,7 @@ int fsa_dir_remove(
         buf_len = path_len + strlen(p->d_name) + 2;
         if (buf_len >= PATH_MAX)
         {
-	        LOG_ERR("Long directory name\n");
+            LOG_ERR("Long directory name\n");
             ret = -3;
             goto exit;
         }
@@ -407,7 +416,7 @@ int fsa_dir_remove(
         ret = rmdir(dir_name);
         if (ret != 0)
         {
-	        LOG_ERR("Can't remove dir (%s)\n", strerror(errno));
+            LOG_ERR("Can't remove dir (%s)\n", strerror(errno));
             goto exit;
         }
     }
@@ -415,7 +424,7 @@ int fsa_dir_remove(
     exit:
     if (NULL != directory && 0 != closedir(directory))
     {
-	    LOG_ERR("Can't close dire (%s)\n", strerror(errno));
+        LOG_ERR("Can't close dire (%s)\n", strerror(errno));
     }
     return ret;
 }
@@ -428,7 +437,7 @@ static int system_vfork(
     pid_t pid_wait = -1;
     int ret = 0;
     const char *sh = "/bin/sh";
-    char * const argv[] = { sh, "-c", cmd, NULL };
+    char *const argv[] = {sh, "-c", cmd, NULL};
 
     pid = vfork();
     if (pid < 0)
@@ -467,7 +476,7 @@ int fsa_run_command(
         const char *cmd,
         ...)
 {
-    char buf[PATH_MAX] = { 0 };
+    char buf[PATH_MAX] = {0};
     va_list args;
     int ret = 0;
 
