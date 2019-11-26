@@ -90,6 +90,8 @@ int fsa_file_copy(
         close(output_fd);
     }
 
+    errno = 0;
+
     return ret;
 }
 
@@ -123,6 +125,9 @@ int fsa_file_rename(
     }
 
     exit:
+
+    errno = 0;
+
     return ret;
 }
 
@@ -163,6 +168,9 @@ int fsa_file_exist(
     ret = 0;
 
     exit:
+
+    errno = 0;
+
     return ret;
 }
 
@@ -197,6 +205,9 @@ int fsa_file_touch(
     {
         close(fd);
     }
+
+    errno = 0;
+
     return ret;
 }
 
@@ -226,6 +237,9 @@ int fsa_file_remove(
     }
 
     exit:
+
+    errno = 0;
+
     return ret;
 }
 
@@ -271,6 +285,9 @@ int fsa_dir_exist(
     {
         closedir(directory);
     }
+
+    errno = 0;
+
     return ret;
 }
 
@@ -426,6 +443,9 @@ int fsa_dir_remove(
     {
         LOG_ERR("Can't close dire (%s)\n", strerror(errno));
     }
+
+    errno = 0;
+
     return ret;
 }
 
